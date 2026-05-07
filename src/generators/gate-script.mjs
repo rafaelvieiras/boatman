@@ -455,7 +455,7 @@ function printMarkdown(current, result) {
       lines.push(\`- **\${def.label}**: \${cur} \${def.unit} ← was \${base} \${def.unit}\`);
     }
     lines.push('');
-    lines.push('> Fix these regressions before merging, then run `npm run quality:baseline` if the new values are intentional.');
+    lines.push('> Fix these regressions before merging, then run \`npm run quality:baseline\` if the new values are intentional.');
     lines.push('');
   }
 
@@ -466,7 +466,7 @@ function printMarkdown(current, result) {
       lines.push(\`- **\${def.label}**: \${cur} \${def.unit} ↑ (was \${base} \${def.unit})\`);
     }
     lines.push('');
-    lines.push('> Run `npm run quality:baseline` to update the baseline with these improvements.');
+    lines.push('> Run \`npm run quality:baseline\` to update the baseline with these improvements.');
     lines.push('');
   }
 
