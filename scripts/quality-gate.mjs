@@ -66,6 +66,8 @@ const METRIC_DEFS = {
   audit_critical:   { label: 'Critical vulns',       unit: 'vulns',   lowerIsBetter: true,  blocking: 'zero'},
   audit_high:       { label: 'High vulns',           unit: 'vulns',   lowerIsBetter: true,  blocking: false },
   mutation_score:   { label: 'Mutation score',       unit: '%',       lowerIsBetter: false, blocking: false },
+  complexity_violations:     { label: 'Complexity violations',     unit: 'funcs', lowerIsBetter: true,  blocking: false },
+  long_function_violations:  { label: 'Long function violations',  unit: 'funcs', lowerIsBetter: true,  blocking: false },
 };
 
 // ─── Gather metrics ──────────────────────────────────────────────────────────
@@ -152,6 +154,32 @@ async function gatherMetrics() {
     metrics.mutation_score = 0;
   }
 
+  // --- Complexity (cyclomatic complexity + function size) ---
+  const complexityReportPath = 'reports/complexity.json';
+  if (existsSync(complexityReportPath)) {
+    try {
+      const cxData = JSON.parse(readFileSync(complexityReportPath, 'utf8'));
+      let complexViolations = 0;
+      let longFnViolations = 0;
+      for (const file of cxData) {
+        for (const msg of file.messages ?? []) {
+          if (msg.ruleId === 'complexity') complexViolations++;
+          else if (msg.ruleId === 'max-lines-per-function') longFnViolations++;
+        }
+      }
+      metrics.complexity_violations    = complexViolations;
+      metrics.long_function_violations = longFnViolations;
+    } catch (e) {
+      warn('Could not parse complexity report: ' + e.message);
+      metrics.complexity_violations    = 0;
+      metrics.long_function_violations = 0;
+    }
+  } else {
+    warn(complexityReportPath + ' not found — complexity scan may not have run yet');
+    metrics.complexity_violations    = 0;
+    metrics.long_function_violations = 0;
+  }
+
   // --- npm audit ---
   const auditReportPath = 'reports/audit.json';
   if (existsSync(auditReportPath)) {
@@ -202,6 +230,8 @@ async function generateBaseline() {
   execSync("npm audit --json > reports/audit.json || true", { stdio: 'inherit', shell: true });
   log('Running Stryker mutation tests...');
   execSync('npx stryker run', { stdio: 'inherit', shell: true });
+  log('Running complexity scan...');
+  execSync("npx eslint src --rule '{\"complexity\":[\"warn\",10],\"max-lines-per-function\":[\"warn\",50]}' --format json --output-file reports/complexity.json || true", { stdio: 'inherit', shell: true });
 
   const metrics = await gatherMetrics();
   const baseline = {

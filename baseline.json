@@ -1,15 +1,17 @@
 {
-  "generatedAt": "2026-05-10T17:57:46.070Z",
-  "commit": "79aa87b",
+  "generatedAt": "2026-05-10T18:12:57.603Z",
+  "commit": "5c12a55",
   "project": "quality-ratchet",
   "metrics": {
     "eslint_errors": 0,
     "eslint_warnings": 0,
-    "coverage_lines": 45.72,
-    "coverage_branches": 47.3,
+    "coverage_lines": 47.52,
+    "coverage_branches": 48.88,
     "coverage_functions": 35.71,
-    "duplicate_percent": 1.02,
-    "mutation_score": 52.16,
+    "duplicate_percent": 1.09,
+    "mutation_score": 52.9,
+    "complexity_violations": 7,
+    "long_function_violations": 7,
     "audit_critical": 0,
     "audit_high": 0
   }
