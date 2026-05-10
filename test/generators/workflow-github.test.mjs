@@ -77,6 +77,35 @@ describe('generateGithubWorkflow', () => {
     });
   });
 
+  describe('complexity check', () => {
+    it('includes complexity step when enabled', () => {
+      const result = generateGithubWorkflow(makeConfig(['complexity']));
+      expect(result).toContain('complexity scan');
+    });
+
+    it('outputs to reports/complexity.json', () => {
+      const result = generateGithubWorkflow(makeConfig(['complexity']));
+      expect(result).toContain('reports/complexity.json');
+    });
+
+    it('uses ESLint with complexity rules', () => {
+      const result = generateGithubWorkflow(makeConfig(['complexity']));
+      expect(result).toContain('"complexity"');
+      expect(result).toContain('"max-lines-per-function"');
+    });
+
+    it('passes lintExtensions to --ext flag', () => {
+      const result = generateGithubWorkflow(makeConfig(['complexity'], { lintExtensions: 'ts,tsx,js' }));
+      expect(result).toContain('--ext ts,tsx,js');
+    });
+
+    it('excludes complexity step when disabled', () => {
+      const result = generateGithubWorkflow(makeConfig());
+      expect(result).not.toContain('complexity scan');
+      expect(result).not.toContain('complexity.json');
+    });
+  });
+
   describe('PR comment', () => {
     it('includes PR comment step when hasPrComment is true', () => {
       const result = generateGithubWorkflow(makeConfig([], { hasPrComment: true }));

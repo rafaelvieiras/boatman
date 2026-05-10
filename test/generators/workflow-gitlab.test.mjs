@@ -73,6 +73,42 @@ describe('generateGitlabWorkflow', () => {
     });
   });
 
+  describe('complexity job', () => {
+    it('includes complexity job when complexity check enabled', () => {
+      const result = generateGitlabWorkflow(makeConfig(['complexity']));
+      expect(result).toContain('complexity:');
+    });
+
+    it('runs in lint stage', () => {
+      const result = generateGitlabWorkflow(makeConfig(['complexity']));
+      const complexityJobIdx = result.indexOf('complexity:');
+      const stageIdx = result.indexOf('stage: lint', complexityJobIdx);
+      expect(stageIdx).toBeGreaterThan(complexityJobIdx);
+    });
+
+    it('uses ESLint with complexity rules', () => {
+      const result = generateGitlabWorkflow(makeConfig(['complexity']));
+      expect(result).toContain('"complexity"');
+      expect(result).toContain('"max-lines-per-function"');
+    });
+
+    it('saves complexity report as artifact', () => {
+      const result = generateGitlabWorkflow(makeConfig(['complexity']));
+      expect(result).toContain('reports/complexity.json');
+    });
+
+    it('adds complexity to quality-gate needs', () => {
+      const result = generateGitlabWorkflow(makeConfig(['complexity']));
+      expect(result).toContain('- complexity');
+    });
+
+    it('excludes complexity job when disabled', () => {
+      const result = generateGitlabWorkflow(makeConfig());
+      expect(result).not.toContain('complexity:');
+      expect(result).not.toContain('complexity.json');
+    });
+  });
+
   describe('quality-gate needs', () => {
     it('has no needs when no checks enabled', () => {
       const result = generateGitlabWorkflow(makeConfig());

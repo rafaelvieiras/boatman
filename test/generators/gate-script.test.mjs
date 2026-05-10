@@ -110,6 +110,45 @@ describe('generateGateScript', () => {
     });
   });
 
+  describe('complexity check', () => {
+    it('includes complexity_violations metric when enabled', () => {
+      const result = generateGateScript(makeConfig(['complexity']));
+      expect(result).toContain('complexity_violations');
+    });
+
+    it('includes long_function_violations metric when enabled', () => {
+      const result = generateGateScript(makeConfig(['complexity']));
+      expect(result).toContain('long_function_violations');
+    });
+
+    it('reads from reports/complexity.json', () => {
+      const result = generateGateScript(makeConfig(['complexity']));
+      expect(result).toContain('reports/complexity.json');
+    });
+
+    it('counts violations by ruleId complexity', () => {
+      const result = generateGateScript(makeConfig(['complexity']));
+      expect(result).toContain("msg.ruleId === 'complexity'");
+    });
+
+    it('counts violations by ruleId max-lines-per-function', () => {
+      const result = generateGateScript(makeConfig(['complexity']));
+      expect(result).toContain("msg.ruleId === 'max-lines-per-function'");
+    });
+
+    it('runs complexity scan in baseline when enabled', () => {
+      const result = generateGateScript(makeConfig(['complexity']));
+      expect(result).toContain('complexity scan');
+      expect(result).toContain('complexity.json');
+    });
+
+    it('excludes complexity code when disabled', () => {
+      const result = generateGateScript(makeConfig());
+      expect(result).not.toContain('complexity_violations');
+      expect(result).not.toContain('complexity.json');
+    });
+  });
+
   describe('baseline generation', () => {
     it('includes commit field in generated baseline', () => {
       const result = generateGateScript(makeConfig());
@@ -130,7 +169,7 @@ describe('generateGateScript', () => {
 
   it('generates valid output with all checks enabled', () => {
     const result = generateGateScript(
-      makeConfig(['eslint', 'coverage', 'duplication', 'audit', 'mutation'])
+      makeConfig(['eslint', 'coverage', 'duplication', 'audit', 'mutation', 'complexity'])
     );
     expect(typeof result).toBe('string');
     expect(result.length).toBeGreaterThan(2000);

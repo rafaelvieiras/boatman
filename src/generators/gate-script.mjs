@@ -31,6 +31,7 @@ export function generateGateScript(config) {
   const hasDuplication = checks.has('duplication');
   const hasAudit = checks.has('audit');
   const hasMutation = checks.has('mutation');
+  const hasComplexity = checks.has('complexity');
 
   const pm = packageManager ?? 'npm';
   const auditCmd =
@@ -75,6 +76,12 @@ export function generateGateScript(config) {
   if (hasMutation) {
     metricsDefs.push(
       `  mutation_score:   { label: 'Mutation score',       unit: '%',       lowerIsBetter: false, blocking: false },`,
+    );
+  }
+  if (hasComplexity) {
+    metricsDefs.push(
+      `  complexity_violations:     { label: 'Complexity violations',     unit: 'funcs', lowerIsBetter: true,  blocking: false },`,
+      `  long_function_violations:  { label: 'Long function violations',  unit: 'funcs', lowerIsBetter: true,  blocking: false },`,
     );
   }
 
@@ -173,6 +180,35 @@ export function generateGateScript(config) {
   }`);
   }
 
+  if (hasComplexity) {
+    gatherParts.push(`
+  // --- Complexity (cyclomatic complexity + function size) ---
+  const complexityReportPath = 'reports/complexity.json';
+  if (existsSync(complexityReportPath)) {
+    try {
+      const cxData = JSON.parse(readFileSync(complexityReportPath, 'utf8'));
+      let complexViolations = 0;
+      let longFnViolations = 0;
+      for (const file of cxData) {
+        for (const msg of file.messages ?? []) {
+          if (msg.ruleId === 'complexity') complexViolations++;
+          else if (msg.ruleId === 'max-lines-per-function') longFnViolations++;
+        }
+      }
+      metrics.complexity_violations    = complexViolations;
+      metrics.long_function_violations = longFnViolations;
+    } catch (e) {
+      warn('Could not parse complexity report: ' + e.message);
+      metrics.complexity_violations    = 0;
+      metrics.long_function_violations = 0;
+    }
+  } else {
+    warn(complexityReportPath + ' not found — complexity scan may not have run yet');
+    metrics.complexity_violations    = 0;
+    metrics.long_function_violations = 0;
+  }`);
+  }
+
   if (hasAudit) {
     gatherParts.push(`
   // --- npm audit ---
@@ -231,6 +267,13 @@ export function generateGateScript(config) {
   if (hasMutation) {
     baselineCmds.push(`  log('Running Stryker mutation tests...');`);
     baselineCmds.push(`  execSync('npx stryker run', { stdio: 'inherit', shell: true });`);
+  }
+  if (hasComplexity) {
+    const complexityCmd = isTypeScript
+      ? `npx eslint ${srcDir} --ext ${lintExtensions} --rule '{"complexity":["warn",10],"max-lines-per-function":["warn",50]}' --format json --output-file reports/complexity.json || true`
+      : `npx eslint ${srcDir} --rule '{"complexity":["warn",10],"max-lines-per-function":["warn",50]}' --format json --output-file reports/complexity.json || true`;
+    baselineCmds.push(`  log('Running complexity scan...');`);
+    baselineCmds.push(`  execSync(${JSON.stringify(complexityCmd)}, { stdio: 'inherit', shell: true });`);
   }
 
   return `#!/usr/bin/env node

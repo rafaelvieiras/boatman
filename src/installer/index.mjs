@@ -280,6 +280,13 @@ export async function run(args) {
       default: project.hasStryker,
     },
     {
+      label: 'Complexity (cyclomatic + function size)',
+      description: 'Track complex functions and oversized functions via ESLint',
+      value: 'complexity',
+      available: project.hasEslint,
+      default: false,
+    },
+    {
       label: 'PR comment with quality report',
       description: 'Post a Markdown summary on GitHub PRs',
       value: 'pr-comment',

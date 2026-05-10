@@ -68,6 +68,7 @@ npx quality-ratchet --dry-run
 | `duplication` | Code duplication percentage (via jscpd)     | Yes — increase blocks the PR |
 | `audit`       | Critical and high npm vulnerabilities       | Critical: zero-tolerance     |
 | `mutation`    | Mutation score percentage (via Stryker)     | Warn only (non-blocking)     |
+| `complexity`  | Cyclomatic complexity & long functions      | Warn only (non-blocking)     |
 | `pr-comment`  | Posts a Markdown report as a PR comment     | N/A (GitHub only)            |
 
 ---
@@ -111,6 +112,21 @@ npx eslint src --ext ts,tsx --format json | node scripts/count-lint.mjs
 
 ---
 
+## Complexity Check
+
+When the `complexity` check is enabled, quality-ratchet runs an ESLint scan with two specific rules applied on top of your existing config:
+
+| Rule                    | Default threshold | Metric tracked               |
+|-------------------------|-------------------|------------------------------|
+| `complexity`            | max 10            | `complexity_violations`      |
+| `max-lines-per-function`| max 50 lines      | `long_function_violations`   |
+
+The scan writes its output to `reports/complexity.json` and the gate tracks the **number of violations** over time. Both metrics are non-blocking — they warn when the count increases but do not fail the build. This lets teams adopt the check incrementally: start tracking today, reduce the count gradually, and never let it grow again.
+
+The check requires ESLint to be installed in the target project. It is available in the interactive installer only when ESLint is detected, and defaults to **off** (opt-in).
+
+---
+
 ## Using the Baseline
 
 ### 1. Generate the initial baseline
@@ -122,7 +138,7 @@ npm run quality:baseline
 # or: pnpm quality:baseline / yarn quality:baseline / bun run quality:baseline
 ```
 
-This runs ESLint, your test suite with coverage, jscpd, npm audit, and/or Stryker — then saves all metric values to `baseline.json`:
+This runs ESLint, your test suite with coverage, jscpd, npm audit, Stryker, and/or the complexity scan — then saves all metric values to `baseline.json`:
 
 ```json
 {
@@ -134,7 +150,9 @@ This runs ESLint, your test suite with coverage, jscpd, npm audit, and/or Stryke
     "coverage_lines": 84.2,
     "duplicate_percent": 3.2,
     "audit_critical": 0,
-    "mutation_score": 65.3
+    "mutation_score": 65.3,
+    "complexity_violations": 2,
+    "long_function_violations": 5
   }
 }
 ```

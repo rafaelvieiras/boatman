@@ -29,6 +29,7 @@ export function generateGithubWorkflow(config) {
   const hasDuplication = checks.has('duplication');
   const hasAudit       = checks.has('audit');
   const hasMutation    = checks.has('mutation');
+  const hasComplexity  = checks.has('complexity');
 
   const branches = (mainBranches ?? ['main', 'master']).map((b) => `      - ${b}`).join('\n');
 
@@ -138,6 +139,15 @@ export function generateGithubWorkflow(config) {
         run: |
           mkdir -p reports/mutation
           npx stryker run || true`);
+  }
+
+  // Complexity step
+  if (hasComplexity) {
+    steps.push(`
+      - name: Run complexity scan
+        run: |
+          mkdir -p reports
+          npx eslint . --ext ${lintExtensions} --rule '{"complexity":["warn",10],"max-lines-per-function":["warn",50]}' --format json --output-file reports/complexity.json || true`);
   }
 
   // Quality gate step

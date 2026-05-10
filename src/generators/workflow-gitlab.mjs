@@ -23,6 +23,7 @@ export function generateGitlabWorkflow(config) {
   const hasDuplication = checks.has('duplication');
   const hasAudit       = checks.has('audit');
   const hasMutation    = checks.has('mutation');
+  const hasComplexity  = checks.has('complexity');
 
   // Install and run commands per package manager
   let installCmd = 'npm ci';
@@ -133,9 +134,24 @@ export function generateGitlabWorkflow(config) {
     when: always`);
   }
 
+  // --- complexity job ---
+  if (hasComplexity) {
+    jobs.push(`complexity:
+  stage: lint
+  script:
+    - mkdir -p reports
+    - npx eslint . --rule '{"complexity":["warn",10],"max-lines-per-function":["warn",50]}' --format json --output-file reports/complexity.json || true
+  artifacts:
+    paths:
+      - reports/complexity.json
+    expire_in: 1 week
+    when: always`);
+  }
+
   // Determine stage dependencies for quality job
   const qualityNeeds = [];
   if (hasEslint) qualityNeeds.push('lint');
+  if (hasComplexity) qualityNeeds.push('complexity');
   if (hasCoverage) qualityNeeds.push('test');
   if (hasDuplication) qualityNeeds.push('duplication');
   if (hasAudit) qualityNeeds.push('audit');
