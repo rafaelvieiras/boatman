@@ -31,11 +31,18 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@stryker-mutator/core": "^9.6.1",
+    "@stryker-mutator/vitest-runner": "^9.6.1",
+    "@vitest/coverage-v8": "^4.1.5",
     "eslint": "^10.3.0",
     "globals": "^17.6.0",
-    "jscpd": "^4.1.0"
+    "jscpd": "^4.1.0",
+    "vitest": "^4.1.5"
   },
   "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "quality:mutation": "npx stryker run",
     "quality:gate": "node scripts/quality-gate.mjs",
     "quality:gate:local": "node scripts/quality-gate.mjs --local",
     "quality:baseline": "node scripts/quality-gate.mjs --generate-baseline",

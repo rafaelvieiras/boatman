@@ -45,6 +45,11 @@ jobs:
           mkdir -p reports
           npx eslint . --ext js,jsx --format json --output-file reports/eslint.json || true
 
+      - name: Run tests with coverage
+        run: |
+          mkdir -p reports
+          npm run test:coverage
+
       - name: Check code duplication
         run: |
           mkdir -p reports
@@ -54,6 +59,11 @@ jobs:
         run: |
           mkdir -p reports
           npm audit --json > reports/audit.json || true
+
+      - name: Run mutation tests (Stryker)
+        run: |
+          mkdir -p reports/mutation
+          npx stryker run || true
 
       - name: Run quality gate
         id: quality_gate

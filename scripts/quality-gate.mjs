@@ -59,9 +59,13 @@ function warn(msg) { console.warn(`${c.yellow}⚠  ${msg}${c.reset}`); }
 const METRIC_DEFS = {
   eslint_errors:    { label: 'ESLint errors',        unit: 'errors',  lowerIsBetter: true,  blocking: false },
   eslint_warnings:  { label: 'ESLint warnings',      unit: 'warnings',lowerIsBetter: true,  blocking: false },
+  coverage_lines:   { label: 'Coverage lines %',     unit: '%',       lowerIsBetter: false, blocking: true  },
+  coverage_branches:{ label: 'Coverage branches %',  unit: '%',       lowerIsBetter: false, blocking: true  },
+  coverage_functions:{ label: 'Coverage functions %',unit: '%',       lowerIsBetter: false, blocking: true  },
   duplicate_percent:{ label: 'Duplication %',        unit: '%',       lowerIsBetter: true,  blocking: true  },
   audit_critical:   { label: 'Critical vulns',       unit: 'vulns',   lowerIsBetter: true,  blocking: 'zero'},
   audit_high:       { label: 'High vulns',           unit: 'vulns',   lowerIsBetter: true,  blocking: false },
+  mutation_score:   { label: 'Mutation score',       unit: '%',       lowerIsBetter: false, blocking: false },
 };
 
 // ─── Gather metrics ──────────────────────────────────────────────────────────
@@ -87,6 +91,28 @@ async function gatherMetrics() {
   metrics.eslint_errors   = eslintErrors;
   metrics.eslint_warnings = eslintWarnings;
 
+  // --- Coverage ---
+  const covPath = 'reports/coverage/coverage-summary.json';
+  if (existsSync(covPath)) {
+    try {
+      const covData = JSON.parse(readFileSync(covPath, 'utf8'));
+      const total = covData.total ?? {};
+      metrics.coverage_lines     = total.lines?.pct     ?? 0;
+      metrics.coverage_branches  = total.branches?.pct  ?? 0;
+      metrics.coverage_functions = total.functions?.pct ?? 0;
+    } catch (e) {
+      warn('Could not parse coverage report: ' + e.message);
+      metrics.coverage_lines     = 0;
+      metrics.coverage_branches  = 0;
+      metrics.coverage_functions = 0;
+    }
+  } else {
+    warn(covPath + ' not found — coverage step may have been skipped');
+    metrics.coverage_lines     = 0;
+    metrics.coverage_branches  = 0;
+    metrics.coverage_functions = 0;
+  }
+
   // --- Duplication (jscpd) ---
   const jscpdReportPath = 'reports/jscpd-report.json';
   if (existsSync(jscpdReportPath)) {
@@ -101,6 +127,29 @@ async function gatherMetrics() {
   } else {
     warn(jscpdReportPath + ' not found — jscpd may not have run yet');
     metrics.duplicate_percent = 0;
+  }
+
+  // --- Mutation score (Stryker) ---
+  const mutationReportPath = 'reports/mutation/mutation.json';
+  if (existsSync(mutationReportPath)) {
+    try {
+      const mutData = JSON.parse(readFileSync(mutationReportPath, 'utf8'));
+      let killed = 0, total = 0;
+      for (const file of Object.values(mutData.files ?? {})) {
+        for (const mutant of file.mutants ?? []) {
+          if (mutant.status === 'Ignored' || mutant.status === 'CompileError') continue;
+          total++;
+          if (mutant.status === 'Killed' || mutant.status === 'Timeout') killed++;
+        }
+      }
+      metrics.mutation_score = total > 0 ? parseFloat(((killed / total) * 100).toFixed(2)) : 0;
+    } catch (e) {
+      warn('Could not parse mutation report: ' + e.message);
+      metrics.mutation_score = 0;
+    }
+  } else {
+    warn(mutationReportPath + ' not found — Stryker may not have run yet');
+    metrics.mutation_score = 0;
   }
 
   // --- npm audit ---
@@ -145,10 +194,14 @@ async function generateBaseline() {
 
   log('Running ESLint...');
   execSync("npx eslint src --format json --output-file reports/eslint.json || true", { stdio: 'inherit', shell: true });
+  log('Running tests with coverage...');
+  execSync('vitest run --coverage', { stdio: 'inherit', shell: true });
   log('Running jscpd...');
   execSync('npx jscpd src --reporters json --output reports/', { stdio: 'inherit', shell: true });
   log('Running audit...');
   execSync("npm audit --json > reports/audit.json || true", { stdio: 'inherit', shell: true });
+  log('Running Stryker mutation tests...');
+  execSync('npx stryker run', { stdio: 'inherit', shell: true });
 
   const metrics = await gatherMetrics();
   const baseline = {

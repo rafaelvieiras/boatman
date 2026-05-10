@@ -15,6 +15,6 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/', 'reports/', 'scripts/'],
+    ignores: ['node_modules/', 'reports/', 'scripts/', '.stryker-tmp/'],
   },
 ];
