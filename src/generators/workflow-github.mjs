@@ -24,10 +24,11 @@ export function generateGithubWorkflow(config) {
     mainBranches,
   } = config;
 
-  const hasEslint     = checks.has('eslint');
-  const hasCoverage   = checks.has('coverage');
+  const hasEslint      = checks.has('eslint');
+  const hasCoverage    = checks.has('coverage');
   const hasDuplication = checks.has('duplication');
-  const hasAudit      = checks.has('audit');
+  const hasAudit       = checks.has('audit');
+  const hasMutation    = checks.has('mutation');
 
   const branches = (mainBranches ?? ['main', 'master']).map((b) => `      - ${b}`).join('\n');
 
@@ -128,6 +129,15 @@ export function generateGithubWorkflow(config) {
         run: |
           mkdir -p reports
           ${auditCmd}`);
+  }
+
+  // Mutation step
+  if (hasMutation) {
+    steps.push(`
+      - name: Run mutation tests (Stryker)
+        run: |
+          mkdir -p reports/mutation
+          npx stryker run || true`);
   }
 
   // Quality gate step

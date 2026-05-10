@@ -30,6 +30,7 @@ export function generateGateScript(config) {
   const hasCoverage = checks.has('coverage');
   const hasDuplication = checks.has('duplication');
   const hasAudit = checks.has('audit');
+  const hasMutation = checks.has('mutation');
 
   const pm = packageManager ?? 'npm';
   const auditCmd =
@@ -75,6 +76,11 @@ export function generateGateScript(config) {
     metricsDefs.push(
       `  audit_critical:   { label: 'Critical vulns',       unit: 'vulns',   lowerIsBetter: true,  blocking: 'zero'},`,
       `  audit_high:       { label: 'High vulns',           unit: 'vulns',   lowerIsBetter: true,  blocking: false },`,
+    );
+  }
+  if (hasMutation) {
+    metricsDefs.push(
+      `  mutation_score:   { label: 'Mutation score',       unit: '%',       lowerIsBetter: false, blocking: false },`,
     );
   }
 
@@ -147,6 +153,32 @@ export function generateGateScript(config) {
   }`);
   }
 
+  if (hasMutation) {
+    gatherParts.push(`
+  // --- Mutation score (Stryker) ---
+  const mutationReportPath = 'reports/mutation/mutation.json';
+  if (existsSync(mutationReportPath)) {
+    try {
+      const mutData = JSON.parse(readFileSync(mutationReportPath, 'utf8'));
+      let killed = 0, total = 0;
+      for (const file of Object.values(mutData.files ?? {})) {
+        for (const mutant of file.mutants ?? []) {
+          if (mutant.status === 'Ignored' || mutant.status === 'CompileError') continue;
+          total++;
+          if (mutant.status === 'Killed' || mutant.status === 'Timeout') killed++;
+        }
+      }
+      metrics.mutation_score = total > 0 ? parseFloat(((killed / total) * 100).toFixed(2)) : 0;
+    } catch (e) {
+      warn('Could not parse mutation report: ' + e.message);
+      metrics.mutation_score = 0;
+    }
+  } else {
+    warn(mutationReportPath + ' not found — Stryker may not have run yet');
+    metrics.mutation_score = 0;
+  }`);
+  }
+
   if (hasAudit) {
     gatherParts.push(`
   // --- npm audit ---
@@ -201,6 +233,10 @@ export function generateGateScript(config) {
   if (hasAudit) {
     baselineCmds.push(`  log('Running audit...');`);
     baselineCmds.push(`  execSync(${JSON.stringify(`${auditCmd} > reports/audit.json || true`)}, { stdio: 'inherit', shell: true });`);
+  }
+  if (hasMutation) {
+    baselineCmds.push(`  log('Running Stryker mutation tests...');`);
+    baselineCmds.push(`  execSync('npx stryker run', { stdio: 'inherit', shell: true });`);
   }
 
   return `#!/usr/bin/env node
@@ -282,6 +318,7 @@ ${baselineCmds.join('\n')}
   const metrics = await gatherMetrics();
   const baseline = {
     generatedAt: new Date().toISOString(),
+    commit: (() => { try { return execSync('git rev-parse --short HEAD', { cwd: ROOT, stdio: 'pipe' }).toString().trim(); } catch { return 'unknown'; } })(),
     project: '${projectName}',
     metrics,
   };

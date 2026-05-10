@@ -91,6 +91,14 @@ export function detectProject(rootDir) {
   // --- JSCPD ---
   const hasJscpd = hasDep('jscpd');
 
+  // --- Stryker (mutation testing) ---
+  const hasStryker =
+    hasDep('@stryker-mutator/core') ||
+    exists('stryker.config.mjs') ||
+    exists('stryker.config.js') ||
+    exists('stryker.config.json') ||
+    exists('stryker.config.cjs');
+
   // --- Lint extensions ---
   const lintExtensions = isTypeScript ? 'ts,tsx,js,jsx' : 'js,jsx';
 
@@ -130,6 +138,7 @@ export function detectProject(rootDir) {
     hasSrcDirName,
     ciPlatforms,
     hasJscpd,
+    hasStryker,
     packageJson,
     testCoverageScript,
     lintScript,

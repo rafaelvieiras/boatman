@@ -7,6 +7,7 @@ import { generateGateScript } from '../generators/gate-script.mjs';
 import { generateGithubWorkflow } from '../generators/workflow-github.mjs';
 import { generateGitlabWorkflow } from '../generators/workflow-gitlab.mjs';
 import { injectPackageScripts } from '../generators/pkg-scripts.mjs';
+import { generateCountLintScript } from '../generators/count-lint-script.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
@@ -90,6 +91,7 @@ function printStack(project) {
   console.log(`    🧪 Test runner     : ${project.testRunner ? `${CYAN}${project.testRunner}${RESET}` : `${DIM}none detected${RESET}`}`);
   console.log(`    📊 Coverage        : ${project.coverageProvider ? `${CYAN}${project.coverageProvider}${RESET}` : `${DIM}none detected${RESET}`}`);
   console.log(`    🔍 ESLint          : ${project.hasEslint ? `${GREEN}yes${RESET}` : `${DIM}no${RESET}`}`);
+  console.log(`    🧬 Stryker         : ${project.hasStryker ? `${GREEN}yes${RESET}` : `${DIM}no${RESET}`}`);
   console.log(`    📁 Source dir      : ${project.hasSrcDir ? `${CYAN}${project.hasSrcDirName}/${RESET}` : `${DIM}not found${RESET}`}`);
   if (project.ciPlatforms.length > 0) {
     console.log(`    ⚙️  CI detected     : ${CYAN}${project.ciPlatforms.join(', ')}${RESET}`);
@@ -124,6 +126,8 @@ function printNextSteps(project, selectedChecks, selectedPlatforms, dryRun) {
     console.log(`  ${YELLOW}(dry-run mode — no files were written)${RESET}\n`);
   }
 
+  let stepNum = 1;
+
   if (!project.hasJscpd && selectedChecks.includes('duplication')) {
     const pm = project.packageManager;
     const installCmd =
@@ -131,8 +135,20 @@ function printNextSteps(project, selectedChecks, selectedPlatforms, dryRun) {
       pm === 'yarn' ? 'yarn add -D jscpd' :
       pm === 'bun'  ? 'bun add -d jscpd' :
       'npm install -D jscpd';
-    console.log(`  1. Install jscpd (needed for duplication check):`);
+    console.log(`  ${stepNum++}. Install jscpd (needed for duplication check):`);
     console.log(`     ${CYAN}${installCmd}${RESET}\n`);
+  }
+
+  if (!project.hasStryker && selectedChecks.includes('mutation')) {
+    const pm = project.packageManager;
+    const installCmd =
+      pm === 'pnpm' ? 'pnpm add -D @stryker-mutator/core' :
+      pm === 'yarn' ? 'yarn add -D @stryker-mutator/core' :
+      pm === 'bun'  ? 'bun add -d @stryker-mutator/core' :
+      'npm install -D @stryker-mutator/core';
+    console.log(`  ${stepNum++}. Install Stryker (needed for mutation testing):`);
+    console.log(`     ${CYAN}${installCmd}${RESET}`);
+    console.log(`     ${DIM}Then configure stryker.config.mjs for your project.${RESET}\n`);
   }
 
   console.log(`  ${BOLD}Generate your initial baseline:${RESET}`);
@@ -260,6 +276,13 @@ export async function run(args) {
       default: project.packageManager !== 'bun',
     },
     {
+      label: 'Mutation testing (Stryker)',
+      description: 'Track mutation score over time',
+      value: 'mutation',
+      available: project.hasStryker,
+      default: project.hasStryker,
+    },
+    {
       label: 'PR comment with quality report',
       description: 'Post a Markdown summary on GitHub PRs',
       value: 'pr-comment',
@@ -315,6 +338,10 @@ export async function run(args) {
   const gateScriptContent = generateGateScript(gateConfig);
   ensureDir(join(opts.path, 'scripts'), opts.dryRun);
   writeFile(join(opts.path, 'scripts', 'quality-gate.mjs'), gateScriptContent, opts.dryRun);
+
+  // Generate count-lint helper (always — useful companion for ESLint)
+  const countLintContent = generateCountLintScript();
+  writeFile(join(opts.path, 'scripts', 'count-lint.mjs'), countLintContent, opts.dryRun);
 
   // Ensure reports dir exists as a placeholder
   ensureDir(join(opts.path, 'reports'), opts.dryRun);
@@ -374,10 +401,14 @@ export async function run(args) {
     }
   }
 
-  // 9. Jscpd install hint
+  // 9. Dependency hints
   if (checksSet.has('duplication') && !project.hasJscpd && !opts.dryRun) {
     console.log(`\n  ${YELLOW}⚠${RESET}  jscpd not found in devDependencies.`);
     console.log(`  ${DIM}You'll need to install it manually (see next steps below).${RESET}`);
+  }
+  if (checksSet.has('mutation') && !project.hasStryker && !opts.dryRun) {
+    console.log(`\n  ${YELLOW}⚠${RESET}  Stryker not found in devDependencies.`);
+    console.log(`  ${DIM}You'll need to install and configure it manually (see next steps below).${RESET}`);
   }
 
   close();

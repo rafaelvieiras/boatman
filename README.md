@@ -47,14 +47,15 @@ npx quality-ratchet --dry-run
 
 ## Supported Stack
 
-| Category       | Supported                                                  |
-|----------------|------------------------------------------------------------|
-| Language       | JavaScript, TypeScript                                     |
-| Package manager| npm, pnpm, yarn, bun                                       |
-| Test runner    | Vitest, Jest, Mocha                                        |
-| Coverage       | @vitest/coverage-v8, @vitest/coverage-istanbul, jest       |
-| Linter         | ESLint (any config format)                                 |
-| CI platform    | GitHub Actions, GitLab CI                                  |
+| Category        | Supported                                                  |
+|-----------------|------------------------------------------------------------|
+| Language        | JavaScript, TypeScript                                     |
+| Package manager | npm, pnpm, yarn, bun                                       |
+| Test runner     | Vitest, Jest, Mocha                                        |
+| Coverage        | @vitest/coverage-v8, @vitest/coverage-istanbul, jest       |
+| Linter          | ESLint (any config format)                                 |
+| Mutation testing| Stryker (`@stryker-mutator/core`)                          |
+| CI platform     | GitHub Actions, GitLab CI                                  |
 
 ---
 
@@ -66,6 +67,7 @@ npx quality-ratchet --dry-run
 | `coverage`    | Lines, branches, functions percentage       | Yes — drop blocks the PR     |
 | `duplication` | Code duplication percentage (via jscpd)     | Yes — increase blocks the PR |
 | `audit`       | Critical and high npm vulnerabilities       | Critical: zero-tolerance     |
+| `mutation`    | Mutation score percentage (via Stryker)     | Warn only (non-blocking)     |
 | `pr-comment`  | Posts a Markdown report as a PR comment     | N/A (GitHub only)            |
 
 ---
@@ -77,7 +79,8 @@ After running `quality-ratchet init`, the following files are created or updated
 ```
 your-project/
 ├── scripts/
-│   └── quality-gate.mjs          # Standalone gate script
+│   ├── quality-gate.mjs          # Standalone gate script
+│   └── count-lint.mjs            # ESLint output counter (stdin helper)
 ├── .github/
 │   └── workflows/
 │       └── quality-gate.yml      # GitHub Actions workflow (if selected)
@@ -93,6 +96,18 @@ your-project/
 | `quality:gate:local`    | Runs the gate with human-readable terminal output |
 | `quality:baseline`      | Runs all tools and saves a new baseline.json      |
 | `duplication`           | Runs jscpd and saves report (if selected)         |
+| `quality:mutation`      | Runs Stryker mutation tests (if selected)         |
+
+---
+
+## Using count-lint
+
+`count-lint.mjs` is a helper that reads ESLint's JSON output from stdin and prints a human-readable summary. Useful for quick checks without opening the full JSON report:
+
+```bash
+npx eslint src --ext ts,tsx --format json | node scripts/count-lint.mjs
+# ESLint: 3 errors, 12 warnings
+```
 
 ---
 
@@ -107,7 +122,22 @@ npm run quality:baseline
 # or: pnpm quality:baseline / yarn quality:baseline / bun run quality:baseline
 ```
 
-This runs ESLint, your test suite with coverage, jscpd, and/or npm audit — then saves all metric values to `baseline.json`.
+This runs ESLint, your test suite with coverage, jscpd, npm audit, and/or Stryker — then saves all metric values to `baseline.json`:
+
+```json
+{
+  "generatedAt": "2026-05-07T10:00:00.000Z",
+  "commit": "a1b2c3d",
+  "project": "my-project",
+  "metrics": {
+    "eslint_errors": 0,
+    "coverage_lines": 84.2,
+    "duplicate_percent": 3.2,
+    "audit_critical": 0,
+    "mutation_score": 65.3
+  }
+}
+```
 
 ### 2. Commit the baseline
 
@@ -143,6 +173,7 @@ Quality Gate — my-project
 
 Improvements:
   ✔ Coverage lines %: 84.2 %  (was 80.1 %  +4.10 ↑)
+  ✔ Mutation score:   65.3 %  (was 60.0 %  +5.30 ↑)
 
 Unchanged:
   ─ ESLint errors: 0 errors
@@ -171,11 +202,13 @@ When running on GitHub Actions with the `pr-comment` check enabled, the gate pos
 | Coverage lines %    | 84.2 %   | 80.1 %   | +4.10 ↑ | ✅     |
 | Coverage branches % | 78.5 %   | 78.5 %   | +0.00 → | ➡️     |
 | Duplication %       | 3.2 %    | 3.5 %    | -0.30 ↓ | ✅     |
+| Mutation score      | 65.3 %   | 60.0 %   | +5.30 ↑ | ✅     |
 
 ### ✅ Improvements Detected
 
 - **Coverage lines %**: 84.2 % ↑ (was 80.1 %)
 - **Duplication %**: 3.2 % (was 3.5 %)
+- **Mutation score**: 65.3 % ↑ (was 60.0 %)
 
 > Run `npm run quality:baseline` to update the baseline with these improvements.
 

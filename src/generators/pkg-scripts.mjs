@@ -53,6 +53,11 @@ export async function injectPackageScripts(rootDir, checks, packageManager, dryR
     setScript('duplication', `jscpd ${srcDirName} --reporters json --output reports/`);
   }
 
+  // Mutation testing script
+  if (checksSet.has('mutation')) {
+    setScript('quality:mutation', 'npx stryker run');
+  }
+
   if (!dryRun) {
     writeFileSync(pkgPath, JSON.stringify(pkgJson, null, 2) + '\n', 'utf8');
   }

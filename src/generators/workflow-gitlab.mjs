@@ -22,6 +22,7 @@ export function generateGitlabWorkflow(config) {
   const hasCoverage    = checks.has('coverage');
   const hasDuplication = checks.has('duplication');
   const hasAudit       = checks.has('audit');
+  const hasMutation    = checks.has('mutation');
 
   // Install and run commands per package manager
   let installCmd = 'npm ci';
@@ -118,12 +119,27 @@ export function generateGitlabWorkflow(config) {
     when: always`);
   }
 
+  // --- mutation job ---
+  if (hasMutation) {
+    jobs.push(`mutation:
+  stage: test
+  script:
+    - mkdir -p reports/mutation
+    - npx stryker run || true
+  artifacts:
+    paths:
+      - reports/mutation/
+    expire_in: 1 week
+    when: always`);
+  }
+
   // Determine stage dependencies for quality job
   const qualityNeeds = [];
   if (hasEslint) qualityNeeds.push('lint');
   if (hasCoverage) qualityNeeds.push('test');
   if (hasDuplication) qualityNeeds.push('duplication');
   if (hasAudit) qualityNeeds.push('audit');
+  if (hasMutation) qualityNeeds.push('mutation');
 
   const needsYaml = qualityNeeds.length > 0
     ? `  needs:\n${qualityNeeds.map((j) => `    - ${j}`).join('\n')}\n`
