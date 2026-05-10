@@ -17,7 +17,7 @@ export async function injectPackageScripts(rootDir, checks, packageManager, dryR
   let pkgJson;
   try {
     pkgJson = JSON.parse(readFileSync(pkgPath, 'utf8'));
-  } catch (e) {
+  } catch {
     return { added: [], updated: [], packageJson: null };
   }
 

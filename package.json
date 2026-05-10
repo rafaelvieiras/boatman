@@ -3,11 +3,42 @@
   "version": "1.0.0",
   "description": "Smart quality gate installer with ratchet mechanism — prevents metric regressions in JavaScript/TypeScript projects",
   "type": "module",
-  "bin": { "quality-ratchet": "bin/quality-ratchet.mjs" },
-  "files": ["bin/", "src/"],
-  "keywords": ["quality-gate", "ci", "ratchet", "eslint", "coverage", "security", "github-actions", "gitlab-ci"],
+  "bin": {
+    "quality-ratchet": "bin/quality-ratchet.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/"
+  ],
+  "keywords": [
+    "quality-gate",
+    "ci",
+    "ratchet",
+    "eslint",
+    "coverage",
+    "security",
+    "github-actions",
+    "gitlab-ci"
+  ],
   "author": "Rafael Vieiras",
   "license": "MIT",
-  "engines": { "node": ">=18" },
-  "repository": { "type": "git", "url": "https://github.com/rafaelvieiras/quality-ratchet" }
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rafaelvieiras/quality-ratchet"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.3.0",
+    "globals": "^17.6.0",
+    "jscpd": "^4.1.0"
+  },
+  "scripts": {
+    "quality:gate": "node scripts/quality-gate.mjs",
+    "quality:gate:local": "node scripts/quality-gate.mjs --local",
+    "quality:baseline": "node scripts/quality-gate.mjs --generate-baseline",
+    "duplication": "jscpd src --reporters json --output reports/"
+  }
 }

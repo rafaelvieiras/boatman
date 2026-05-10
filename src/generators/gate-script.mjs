@@ -38,12 +38,6 @@ export function generateGateScript(config) {
     pm === 'yarn' ? 'yarn npm audit --json' :
     'npm audit --json';
 
-  const installRunner =
-    pm === 'pnpm' ? 'pnpm dlx' :
-    pm === 'yarn' ? 'yarn dlx' :
-    pm === 'bun'  ? 'bunx' :
-    'npx';
-
   const srcDir = hasSrcDir ? srcDirName : '.';
   const eslintCmd = isTypeScript
     ? `npx eslint ${srcDir} --ext ${lintExtensions} --format json --output-file reports/eslint.json || true`

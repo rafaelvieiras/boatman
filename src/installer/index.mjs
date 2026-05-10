@@ -20,7 +20,6 @@ const GREEN = '\x1b[32m';
 const CYAN = '\x1b[36m';
 const YELLOW = '\x1b[33m';
 const RED = '\x1b[31m';
-const BLUE = '\x1b[34m';
 
 function readVersion() {
   try {
@@ -126,8 +125,6 @@ function printNextSteps(project, selectedChecks, selectedPlatforms, dryRun) {
     console.log(`  ${YELLOW}(dry-run mode — no files were written)${RESET}\n`);
   }
 
-  let stepNum = 1;
-
   if (!project.hasJscpd && selectedChecks.includes('duplication')) {
     const pm = project.packageManager;
     const installCmd =
@@ -135,7 +132,7 @@ function printNextSteps(project, selectedChecks, selectedPlatforms, dryRun) {
       pm === 'yarn' ? 'yarn add -D jscpd' :
       pm === 'bun'  ? 'bun add -d jscpd' :
       'npm install -D jscpd';
-    console.log(`  ${stepNum++}. Install jscpd (needed for duplication check):`);
+    console.log(`  → Install jscpd (needed for duplication check):`);
     console.log(`     ${CYAN}${installCmd}${RESET}\n`);
   }
 
@@ -146,7 +143,7 @@ function printNextSteps(project, selectedChecks, selectedPlatforms, dryRun) {
       pm === 'yarn' ? 'yarn add -D @stryker-mutator/core' :
       pm === 'bun'  ? 'bun add -d @stryker-mutator/core' :
       'npm install -D @stryker-mutator/core';
-    console.log(`  ${stepNum++}. Install Stryker (needed for mutation testing):`);
+    console.log(`  → Install Stryker (needed for mutation testing):`);
     console.log(`     ${CYAN}${installCmd}${RESET}`);
     console.log(`     ${DIM}Then configure stryker.config.mjs for your project.${RESET}\n`);
   }
@@ -203,7 +200,7 @@ export async function run(args) {
   printStack(project);
 
   // 3. CI platform selection
-  let selectedPlatforms = [];
+  let selectedPlatforms;
   const ciChoices = [
     { label: 'GitHub Actions', value: 'github' },
     { label: 'GitLab CI', value: 'gitlab' },
