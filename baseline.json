@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-05-10T18:12:57.603Z",
   "commit": "5c12a55",
-  "project": "quality-ratchet",
+  "project": "boatman",
   "metrics": {
     "eslint_errors": 0,
     "eslint_warnings": 0,

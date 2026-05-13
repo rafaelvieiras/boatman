@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * quality-ratchet — Smart quality gate installer with ratchet mechanism
- * https://github.com/rafaelvieiras/quality-ratchet
+ * boatman — Smart quality gate installer with ratchet mechanism
+ * https://github.com/rafaelvieiras/boatman
  *
  * Usage:
- *   npx quality-ratchet [init] [--path <dir>] [--yes] [--dry-run]
- *   npx quality-ratchet help
+ *   npx boatman [init] [--path <dir>] [--yes] [--dry-run]
+ *   npx boatman help
  */
 
 import { run } from '../src/installer/index.mjs';

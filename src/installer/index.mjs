@@ -59,16 +59,16 @@ function parseArgs(argv) {
 function printBanner(version) {
   console.log('');
   console.log(`${BOLD}${CYAN}  ╔═══════════════════════════════════════╗${RESET}`);
-  console.log(`${BOLD}${CYAN}  ║       quality-ratchet  v${version.padEnd(13)}║${RESET}`);
+  console.log(`${BOLD}${CYAN}  ║       boatman          v${version.padEnd(13)}║${RESET}`);
   console.log(`${BOLD}${CYAN}  ║  Smart quality gate with ratchet  🔒  ║${RESET}`);
   console.log(`${BOLD}${CYAN}  ╚═══════════════════════════════════════╝${RESET}`);
   console.log('');
 }
 
 function printHelp() {
-  console.log(`${BOLD}quality-ratchet${RESET} — Smart quality gate installer with ratchet mechanism\n`);
+  console.log(`${BOLD}boatman${RESET} — Smart quality gate installer with ratchet mechanism\n`);
   console.log(`${BOLD}Usage:${RESET}`);
-  console.log(`  npx quality-ratchet [init] [options]\n`);
+  console.log(`  npx boatman [init] [options]\n`);
   console.log(`${BOLD}Commands:${RESET}`);
   console.log(`  init          Run the interactive installer (default)`);
   console.log(`  help          Show this help message\n`);
@@ -77,9 +77,9 @@ function printHelp() {
   console.log(`  --yes, -y     Accept all defaults without prompting`);
   console.log(`  --dry-run     Show what would be generated without writing files\n`);
   console.log(`${BOLD}Examples:${RESET}`);
-  console.log(`  npx quality-ratchet`);
-  console.log(`  npx quality-ratchet init --path ./my-project`);
-  console.log(`  npx quality-ratchet --yes --dry-run\n`);
+  console.log(`  npx boatman`);
+  console.log(`  npx boatman init --path ./my-project`);
+  console.log(`  npx boatman --yes --dry-run\n`);
 }
 
 function printStack(project) {
@@ -191,7 +191,7 @@ export async function run(args) {
 
   if (!project.hasPackageJson) {
     console.log(`  ${RED}✘${RESET} No package.json found at ${opts.path}`);
-    console.log(`  ${DIM}quality-ratchet only supports JavaScript/TypeScript projects.${RESET}\n`);
+    console.log(`  ${DIM}boatman only supports JavaScript/TypeScript projects.${RESET}\n`);
     close();
     return;
   }
