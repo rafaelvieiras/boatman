@@ -23,8 +23,9 @@
   "author": "Rafael Vieiras",
   "license": "MIT",
   "engines": {
-    "node": ">=18"
+    "node": ">=24"
   },
+  "packageManager": "npm@11.6.2",
   "homepage": "https://github.com/rafaelvieiras/boatman#readme",
   "bugs": {
     "url": "https://github.com/rafaelvieiras/boatman/issues"
@@ -34,13 +35,21 @@
     "url": "git+https://github.com/rafaelvieiras/boatman.git"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.0.1",
+    "@commitlint/config-conventional": "^21.0.1",
     "@eslint/js": "^10.0.1",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^12.0.8",
+    "@semantic-release/npm": "^13.1.5",
     "@stryker-mutator/core": "^9.6.1",
     "@stryker-mutator/vitest-runner": "^9.6.1",
     "@vitest/coverage-v8": "^4.1.5",
     "eslint": "^10.3.0",
     "globals": "^17.6.0",
+    "husky": "^9.1.7",
     "jscpd": "^4.1.0",
+    "semantic-release": "^25.0.3",
     "vitest": "^4.1.5"
   },
   "scripts": {
@@ -50,6 +59,7 @@
     "quality:gate": "node scripts/quality-gate.mjs",
     "quality:gate:local": "node scripts/quality-gate.mjs --local",
     "quality:baseline": "node scripts/quality-gate.mjs --generate-baseline",
-    "duplication": "jscpd src --reporters json --output reports/"
+    "duplication": "jscpd src --reporters json --output reports/",
+    "prepare": "husky"
   }
 }
