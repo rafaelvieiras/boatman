@@ -25,9 +25,13 @@
   "engines": {
     "node": ">=18"
   },
+  "homepage": "https://github.com/rafaelvieiras/boatman#readme",
+  "bugs": {
+    "url": "https://github.com/rafaelvieiras/boatman/issues"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/rafaelvieiras/boatman"
+    "url": "git+https://github.com/rafaelvieiras/boatman.git"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
